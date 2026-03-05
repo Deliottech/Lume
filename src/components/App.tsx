@@ -20,6 +20,17 @@ import {
   Save,
   Plus,
   TrendingUp,
+  Flame,
+  Coins,
+  Rocket,
+  Activity,
+  ExternalLink,
+  Search,
+  Filter,
+  RefreshCw,
+  TrendingDown,
+  DollarSign,
+  Clock,
 } from "lucide-react";
 import { supabase, api, MODELS, PLATFORMS, TEMPLATES, type PlatformId, type GeneratedResult, type User, type Repo } from "../lib/config";
 import {
@@ -59,7 +70,35 @@ const Icons = {
     </svg>
   ),
   Binance: () => <span style={{ fontSize: 18 }}>₿</span>,
+  PumpFun: () => <Flame size={18} />,
+  Meteora: () => <Coins size={18} />,
+  Token: () => <Rocket size={18} />,
+  Activity: () => <Activity size={18} />,
+  ExternalLink: () => <ExternalLink size={14} />,
+  Search: () => <Search size={16} />,
+  Filter: () => <Filter size={16} />,
+  Refresh: () => <RefreshCw size={16} />,
+  DollarSign: () => <DollarSign size={14} />,
+  Clock: () => <Clock size={14} />,
 };
+
+// Token data interface
+interface TokenData {
+  id: string;
+  name: string;
+  symbol: string;
+  address: string;
+  price: number;
+  priceChange24h: number;
+  volume24h: number;
+  marketCap: number;
+  liquidity: number;
+  createdAt: string;
+  platform: "pumpfun" | "meteora" | "raydium";
+  imageUrl?: string;
+  mintAuthority?: string;
+  freezeAuthority?: string;
+}
 
 // AI Chat Sheet component
 function AIChatSheet({
@@ -124,6 +163,124 @@ function AIChatSheet({
   );
 }
 
+// Token Card Component
+function TokenCard({ token, onSelect }: { token: TokenData; onSelect?: (token: TokenData) => void }) {
+  const isPositive = token.priceChange24h >= 0;
+  
+  return (
+    <div 
+      onClick={() => onSelect?.(token)}
+      style={{
+        background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 100%)",
+        border: "1px solid #2a2a4a",
+        borderRadius: 16,
+        padding: 16,
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.borderColor = "#4a4a6a";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.borderColor = "#2a2a4a";
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: 14,
+            color: "#fff",
+          }}>
+            {token.symbol.slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontWeight: 600, color: "#fff", fontSize: 15 }}>{token.name}</div>
+            <div style={{ color: "#888", fontSize: 12 }}>{token.symbol.toUpperCase()}</div>
+          </div>
+        </div>
+        <div style={{
+          padding: "4px 8px",
+          borderRadius: 6,
+          background: token.platform === "pumpfun" ? "#FF6B6B20" : token.platform === "meteora" ? "#00D9FF20" : "#14F19520",
+          color: token.platform === "pumpfun" ? "#FF6B6B" : token.platform === "meteora" ? "#00D9FF" : "#14F195",
+          fontSize: 10,
+          fontWeight: 600,
+          textTransform: "uppercase",
+        }}>
+          {token.platform}
+        </div>
+      </div>
+      
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div>
+          <div style={{ color: "#666", fontSize: 11, marginBottom: 2 }}>Price</div>
+          <div style={{ color: "#fff", fontWeight: 600, fontSize: 16 }}>
+            ${token.price < 0.01 ? token.price.toFixed(6) : token.price.toFixed(4)}
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ color: "#666", fontSize: 11, marginBottom: 2 }}>24h</div>
+          <div style={{ 
+            color: isPositive ? "#14F195" : "#FF6B6B", 
+            fontWeight: 600, 
+            fontSize: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}>
+            {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+            {isPositive ? "+" : ""}{token.priceChange24h.toFixed(2)}%
+          </div>
+        </div>
+      </div>
+      
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #2a2a4a", display: "flex", gap: 16 }}>
+        <div>
+          <div style={{ color: "#666", fontSize: 10 }}>Volume 24h</div>
+          <div style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>${(token.volume24h / 1000).toFixed(1)}K</div>
+        </div>
+        <div>
+          <div style={{ color: "#666", fontSize: 10 }}>Market Cap</div>
+          <div style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>${(token.marketCap / 1000).toFixed(1)}K</div>
+        </div>
+        <div>
+          <div style={{ color: "#666", fontSize: 10 }}>Liquidity</div>
+          <div style={{ color: "#fff", fontSize: 12, fontWeight: 500 }}>${(token.liquidity / 1000).toFixed(1)}K</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Stats Card Component
+function StatsCard({ icon, label, value, subValue, color }: { icon: React.ReactNode; label: string; value: string; subValue?: string; color: string }) {
+  return (
+    <div style={{
+      background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 100%)",
+      border: "1px solid #2a2a4a",
+      borderRadius: 12,
+      padding: 16,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <div style={{ color, }}>{icon}</div>
+        <div style={{ color: "#666", fontSize: 12 }}>{label}</div>
+      </div>
+      <div style={{ color: "#fff", fontWeight: 700, fontSize: 24 }}>{value}</div>
+      {subValue && <div style={{ color: "#666", fontSize: 11, marginTop: 2 }}>{subValue}</div>}
+    </div>
+  );
+}
+
 // Main App component
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -144,9 +301,157 @@ export default function App() {
   const [commitMsg, setCommitMsg] = useState("");
   const [generating, setGenerating] = useState(false);
   const [repos, setRepos] = useState<Repo[]>([]);
+  
+  // Token tracking state
+  const [tokens, setTokens] = useState<TokenData[]>([]);
+  const [loadingTokens, setLoadingTokens] = useState(false);
+  const [filterPlatform, setFilterPlatform] = useState<"all" | "pumpfun" | "meteora">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const pc = PLATFORMS[platform];
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mock data for pump.fun and meteora tokens (simulating real data)
+  const fetchTokens = useCallback(async () => {
+    setLoadingTokens(true);
+    try {
+      // Simulating API call - in production this would fetch from actual APIs
+      const mockTokens: TokenData[] = [
+        {
+          id: "1",
+          name: "PEPE",
+          symbol: "pepe",
+          address: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+          price: 0.000001234,
+          priceChange24h: 12.45,
+          volume24h: 1250000,
+          marketCap: 5200000,
+          liquidity: 89000,
+          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          platform: "pumpfun",
+        },
+        {
+          id: "2",
+          name: "WIF",
+          symbol: "wif",
+          address: "85VBFQZC9TZkfaptBWqv14ALD9fJNUKtWA41kh69teRP",
+          price: 1.234,
+          priceChange24h: 5.67,
+          volume24h: 8900000,
+          marketCap: 520000000,
+          liquidity: 450000,
+          createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+          platform: "raydium",
+        },
+        {
+          id: "3",
+          name: "SOL",
+          symbol: "sol",
+          address: "So11111111111111111111111111111111111111112",
+          price: 98.45,
+          priceChange24h: -2.34,
+          volume24h: 15000000,
+          marketCap: 42000000000,
+          liquidity: 1200000000,
+          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+          platform: "raydium",
+        },
+        {
+          id: "4",
+          name: "BONK",
+          symbol: "bonk",
+          address: "DezXAZ8z7PnrnzjzKi20uac8R4PNhPxWSzwPq7LS223",
+          price: 0.0000234,
+          priceChange24h: 8.92,
+          volume24h: 3400000,
+          marketCap: 180000000,
+          liquidity: 1200000,
+          createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+          platform: "meteora",
+        },
+        {
+          id: "5",
+          name: "MYRO",
+          symbol: "myro",
+          address: "MEKE1rCGaBLGYKZtVNgXFYuS2TTqJJKaYLVq3GpmGfU",
+          price: 0.123,
+          priceChange24h: 15.67,
+          volume24h: 2100000,
+          marketCap: 12000000,
+          liquidity: 340000,
+          createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
+          platform: "pumpfun",
+        },
+        {
+          id: "6",
+          name: "BOME",
+          symbol: "bome",
+          address: "6sw5nTCTJ9wKQCwtNqV3k7Y2H7m2s5rQ9vK8xLnmNPU",
+          price: 0.0089,
+          priceChange24h: -4.56,
+          volume24h: 5600000,
+          marketCap: 89000000,
+          liquidity: 2100000,
+          createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+          platform: "pumpfun",
+        },
+        {
+          id: "7",
+          name: "JUP",
+          symbol: "jup",
+          address: "JUPyiwrYJFskUPiHa7hkeR8VUtkqjberbSOWd91pbT2",
+          price: 0.78,
+          priceChange24h: 3.21,
+          volume24h: 12000000,
+          marketCap: 780000000,
+          liquidity: 34000000,
+          createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+          platform: "raydium",
+        },
+        {
+          id: "8",
+          name: "ARIA",
+          symbol: "aria",
+          address: "ARIA12TrbJxVGKzW3Kq3W4YvD3QwYzKqZxYzKqZxYzKq",
+          price: 0.045,
+          priceChange24h: 22.34,
+          volume24h: 890000,
+          marketCap: 4500000,
+          liquidity: 120000,
+          createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          platform: "meteora",
+        },
+      ];
+      setTokens(mockTokens);
+    } catch (error) {
+      console.error("Failed to fetch tokens:", error);
+    } finally {
+      setLoadingTokens(false);
+    }
+  }, []);
+
+  // Initial token fetch
+  useEffect(() => {
+    fetchTokens();
+  }, [fetchTokens]);
+
+  // Filter tokens
+  const filteredTokens = tokens.filter(token => {
+    const matchesPlatform = filterPlatform === "all" || token.platform === filterPlatform;
+    const matchesSearch = searchQuery === "" || 
+      token.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      token.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesPlatform && matchesSearch;
+  });
+
+  // Calculate stats
+  const totalVolume24h = tokens.reduce((sum, t) => sum + t.volume24h, 0);
+  const avgPriceChange = tokens.length > 0 ? tokens.reduce((sum, t) => sum + t.priceChange24h, 0) / tokens.length : 0;
+  const newTokensToday = tokens.filter(t => {
+    const created = new Date(t.createdAt).getTime();
+    const now = Date.now();
+    return now - created < 24 * 60 * 60 * 1000;
+  }).length;
 
   // Auth and initialization
   useEffect(() => {
@@ -279,6 +584,7 @@ export default function App() {
             justifyContent: "space-between",
             borderBottom: "1px solid #27272a",
             paddingTop: "env(safe-area-inset-top)",
+            background: "linear-gradient(180deg, #0d0d14 0%, #0a0a0f 100%)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -291,9 +597,18 @@ export default function App() {
                 style={{ borderRadius: "50%" }}
               />
             )}
-            <span style={{ fontWeight: 700 }}>CodePush</span>
+            <span style={{ fontWeight: 700, fontSize: 18, background: "linear-gradient(90deg, #667eea, #764ba2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              TokenWatch
+            </span>
           </div>
           <div style={{ display: "flex", gap: 12 }}>
+            <button
+              onClick={() => fetchTokens()}
+              style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}
+              title="Refresh"
+            >
+              <Icons.Refresh />
+            </button>
             <button
               onClick={() => setShowHistory(true)}
               style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}
@@ -309,19 +624,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* PLATFORM BANNER */}
-        <div
-          style={{
-            padding: 12,
-            background: "#111",
-            borderBottom: "1px solid #27272a",
-            color: pcColor,
-            fontSize: 13,
-          }}
-        >
-          {pc.fullLabel}
-        </div>
-
         {/* MAIN SCROLL */}
         <div
           style={{
@@ -331,11 +633,159 @@ export default function App() {
             padding: "16px",
           }}
         >
+          {/* STATS ROW */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+            <StatsCard 
+              icon={<Activity size={18} />} 
+              label="Total Volume" 
+              value={`$${(totalVolume24h / 1000000).toFixed(2)}M`}
+              subValue="Last 24h"
+              color="#667eea"
+            />
+            <StatsCard 
+              icon={<TrendingUp size={18} />} 
+              label="Avg Change" 
+              value={`${avgPriceChange >= 0 ? "+" : ""}${avgPriceChange.toFixed(2)}%`}
+              color={avgPriceChange >= 0 ? "#14F195" : "#FF6B6B"}
+            />
+            <StatsCard 
+              icon={<Rocket size={18} />} 
+              label="New Tokens" 
+              value={newTokensToday.toString()}
+              subValue="Last 24h"
+              color="#FF6B6B"
+            />
+          </div>
+
+          {/* FILTER BAR */}
+          <div style={{ 
+            display: "flex", 
+            gap: 12, 
+            marginBottom: 16,
+            background: "#1a1a2e",
+            borderRadius: 12,
+            padding: 12,
+            border: "1px solid #2a2a4a",
+          }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#666" }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tokens..."
+                style={{
+                  width: "100%",
+                  background: "#27272a",
+                  border: "1px solid #3f3f46",
+                  borderRadius: 8,
+                  padding: "10px 14px 10px 38px",
+                  color: "#fff",
+                  fontSize: 14,
+                  outline: "none",
+                }}
+              />
+            </div>
+            <button
+              onClick={() => setFilterPlatform("all")}
+              style={{
+                padding: "10px 16px",
+                background: filterPlatform === "all" ? "#667eea" : "#27272a",
+                border: "1px solid #3f3f46",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilterPlatform("pumpfun")}
+              style={{
+                padding: "10px 16px",
+                background: filterPlatform === "pumpfun" ? "#FF6B6B" : "#27272a",
+                border: "1px solid #3f3f46",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 13,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Flame size={14} /> Pump.fun
+            </button>
+            <button
+              onClick={() => setFilterPlatform("meteora")}
+              style={{
+                padding: "10px 16px",
+                background: filterPlatform === "meteora" ? "#00D9FF" : "#27272a",
+                border: "1px solid #3f3f46",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 13,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Coins size={14} /> Meteora
+            </button>
+          </div>
+
+          {/* TOKENS GRID */}
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
+            gap: 16,
+            marginBottom: 24,
+          }}>
+            {loadingTokens ? (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40, color: "#666" }}>
+                Loading tokens...
+              </div>
+            ) : filteredTokens.length === 0 ? (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40, color: "#666" }}>
+                No tokens found
+              </div>
+            ) : (
+              filteredTokens.map(token => (
+                <TokenCard 
+                  key={token.id} 
+                  token={token}
+                  onSelect={(t) => {
+                    setPrompt(`Create a trading bot for ${t.name} (${t.symbol}) on Solana with buy/sell alerts based on price movements`);
+                    setPlatform("solana");
+                    toast.success(`Selected ${t.name} for trading bot creation`);
+                  }}
+                />
+              ))
+            )}
+          </div>
+
+          {/* PLATFORM BANNER */}
+          <div
+            style={{
+              padding: 12,
+              background: "linear-gradient(90deg, #1a1a2e 0%, #16162a 100%)",
+              borderBottom: "1px solid #2a2a4a",
+              borderTop: "1px solid #2a2a4a",
+              color: pcColor,
+              fontSize: 13,
+              marginBottom: 16,
+            }}
+          >
+            {pc.fullLabel} — AI Code Generator
+          </div>
+
           {/* PROMPT CARD */}
           <div
             style={{
-              background: "#18181b",
-              border: "1px solid #27272a",
+              background: "linear-gradient(145deg, #1a1a2e 0%, #16162a 100%)",
+              border: "1px solid #2a2a4a",
               borderRadius: 16,
               padding: 16,
             }}
