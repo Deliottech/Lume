@@ -31,6 +31,8 @@ import {
   TrendingDown,
   DollarSign,
   Clock,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { supabase, api, MODELS, PLATFORMS, TEMPLATES, type PlatformId, type GeneratedResult, type User, type Repo } from "../lib/config";
 import {
@@ -80,6 +82,11 @@ const Icons = {
   Refresh: () => <RefreshCw size={16} />,
   DollarSign: () => <DollarSign size={14} />,
   Clock: () => <Clock size={14} />,
+  Discord: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+    </svg>
+  ),
 };
 
 // Token data interface
@@ -158,6 +165,104 @@ function AIChatSheet({
         <PBtn onClick={sendMessage} disabled={thinking || !input.trim()}>
           Send
         </PBtn>
+      </div>
+    </Sheet>
+  );
+}
+
+// Discord Settings Sheet component
+function DiscordSheet({
+  open,
+  onClose,
+  webhook,
+  onSave,
+  sending,
+}: {
+  open: boolean;
+  onClose: () => void;
+  webhook: string;
+  onSave: (webhook: string) => void;
+  sending?: boolean;
+}) {
+  // Initialize with webhook prop - will be set when sheet opens
+  const [inputWebhook, setInputWebhook] = useState(webhook || "");
+  const [testing, setTesting] = useState(false);
+
+  const testWebhook = async () => {
+    if (!inputWebhook.trim()) {
+      toast.error("Please enter a webhook URL");
+      return;
+    }
+    setTesting(true);
+    try {
+      const response = await fetch(inputWebhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            title: "🔔 TokenWatch Test",
+            description: "Discord notifications are working! You'll receive alerts for token events.",
+            color: 0x14F195,
+            timestamp: new Date().toISOString(),
+          }],
+        }),
+      });
+      
+      if (response.ok) {
+        toast.success("Test message sent! Check your Discord");
+      } else {
+        toast.error("Failed to send test. Check webhook URL.");
+      }
+    } catch (error) {
+      toast.error("Invalid webhook URL");
+    }
+    setTesting(false);
+  };
+
+  return (
+    <Sheet open={open} onClose={onClose} title="Discord Notifications">
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ color: "#888", fontSize: 13, marginBottom: 12 }}>
+          Configure a Discord webhook to receive notifications when:
+        </p>
+        <ul style={{ color: "#666", fontSize: 12, paddingLeft: 16, lineHeight: 1.8 }}>
+          <li>🎯 New tokens are selected for trading bot creation</li>
+          <li>📊 Price alerts are triggered</li>
+          <li>💰 Trading opportunities are detected</li>
+        </ul>
+      </div>
+      
+      <div style={{ marginBottom: 16 }}>
+        <Lbl>Discord Webhook URL</Lbl>
+        <Inp
+          value={inputWebhook}
+          onChange={(e) => setInputWebhook(e.target.value)}
+          placeholder="https://discord.com/api/webhooks/..."
+        />
+      </div>
+      
+      <div style={{ display: "flex", gap: 8 }}>
+        <PBtn 
+          onClick={testWebhook} 
+          disabled={testing || !inputWebhook.trim()}
+          style={{ background: "#5865F2", color: "#fff" }}
+        >
+          {testing ? "Sending..." : "Test Webhook"}
+        </PBtn>
+        <PBtn onClick={() => onSave(inputWebhook)} disabled={sending}>
+          Save
+        </PBtn>
+      </div>
+      
+      <div style={{ marginTop: 16, padding: 12, background: "#18181b", borderRadius: 8 }}>
+        <p style={{ color: "#666", fontSize: 11 }}>
+          💡 <strong>How to get a webhook:</strong>
+        </p>
+        <ol style={{ color: "#555", fontSize: 11, paddingLeft: 16, marginTop: 8, lineHeight: 1.6 }}>
+          <li>Go to your Discord server settings</li>
+          <li>Navigate to Integrations → Webhooks</li>
+          <li>Create a new webhook and copy the URL</li>
+        </ol>
       </div>
     </Sheet>
   );
@@ -307,6 +412,11 @@ export default function App() {
   const [loadingTokens, setLoadingTokens] = useState(false);
   const [filterPlatform, setFilterPlatform] = useState<"all" | "pumpfun" | "meteora">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Discord notification state
+  const [discordWebhook, setDiscordWebhook] = useState("");
+  const [showDiscordSettings, setShowDiscordSettings] = useState(false);
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   const pc = PLATFORMS[platform];
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -444,6 +554,50 @@ export default function App() {
     return matchesPlatform && matchesSearch;
   });
 
+  // Send Discord notification
+  const sendDiscordNotification = useCallback(async (title: string, message: string, color: number = 0x667eea) => {
+    if (!discordWebhook.trim()) return false;
+    
+    setSendingNotification(true);
+    try {
+      const response = await fetch(discordWebhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            title,
+            description: message,
+            color,
+            timestamp: new Date().toISOString(),
+            footer: { text: 'TokenWatch Notifications' },
+          }],
+        }),
+      });
+      
+      if (response.ok) {
+        toast.success("Discord notification sent!");
+        return true;
+      } else {
+        toast.error("Failed to send Discord notification");
+        return false;
+      }
+    } catch (error) {
+      console.error("Discord notification error:", error);
+      toast.error("Failed to send Discord notification");
+      return false;
+    } finally {
+      setSendingNotification(false);
+    }
+  }, [discordWebhook]);
+
+  // Save Discord webhook to localStorage
+  const saveDiscordWebhook = useCallback((webhook: string) => {
+    setDiscordWebhook(webhook);
+    localStorage.setItem("discord_webhook", webhook);
+    toast.success("Discord webhook saved!");
+    setShowDiscordSettings(false);
+  }, []);
+
   // Calculate stats
   const totalVolume24h = tokens.reduce((sum, t) => sum + t.volume24h, 0);
   const avgPriceChange = tokens.length > 0 ? tokens.reduce((sum, t) => sum + t.priceChange24h, 0) / tokens.length : 0;
@@ -466,6 +620,12 @@ export default function App() {
       } catch (e) {
         console.error("Failed to parse history", e);
       }
+    }
+    
+    // Load Discord webhook from localStorage
+    const savedDiscord = localStorage.getItem("discord_webhook");
+    if (savedDiscord) {
+      setDiscordWebhook(savedDiscord);
     }
   }, []);
 
@@ -608,6 +768,30 @@ export default function App() {
               title="Refresh"
             >
               <Icons.Refresh />
+            </button>
+            <button
+              onClick={() => setShowDiscordSettings(true)}
+              style={{ 
+                background: "none", 
+                border: "none", 
+                color: discordWebhook ? "#14F195" : "#fff", 
+                cursor: "pointer",
+                position: "relative",
+              }}
+              title="Discord Notifications"
+            >
+              <Icons.Discord />
+              {discordWebhook && (
+                <span style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  width: 8,
+                  height: 8,
+                  background: "#14F195",
+                  borderRadius: "50%",
+                }} />
+              )}
             </button>
             <button
               onClick={() => setShowHistory(true)}
@@ -760,6 +944,14 @@ export default function App() {
                     setPrompt(`Create a trading bot for ${t.name} (${t.symbol}) on Solana with buy/sell alerts based on price movements`);
                     setPlatform("solana");
                     toast.success(`Selected ${t.name} for trading bot creation`);
+                    
+                    // Send Discord notification
+                    sendDiscordNotification(
+                      `🎯 Token Selected: ${t.name}`,
+                      `**${t.symbol.toUpperCase()}** on ${t.platform}\n\n💰 Price: ${t.price < 0.01 ? t.price.toFixed(6) : t.price.toFixed(4)}
+📊 24h Change: ${t.priceChange24h >= 0 ? "+" : ""}${t.priceChange24h.toFixed(2)}%\n🔥 Volume: ${(t.volume24h / 1000).toFixed(1)}K\n\nA trading bot is being created...`,
+                      t.priceChange24h >= 0 ? 0x14F195 : 0xFF6B6B
+                    );
                   }}
                 />
               ))
@@ -1015,6 +1207,13 @@ export default function App() {
         open={showChat}
         onClose={() => setShowChat(false)}
         context={`You are helping with ${platform} — current prompt: ${prompt}`}
+      />
+      <DiscordSheet
+        open={showDiscordSettings}
+        onClose={() => setShowDiscordSettings(false)}
+        webhook={discordWebhook}
+        onSave={saveDiscordWebhook}
+        sending={sendingNotification}
       />
       <HistorySheet
         open={showHistory}
